@@ -30,6 +30,7 @@ The server is a bridge between the Telegram API and the AI assistants and is bas
 - [Configuration](#configuration)
   - [Authorization](#authorization)
   - [Client Configuration](#client-configuration)
+  - [JSON Schema Version](#json-schema-version)
 - [Star History](#star-history)
 
 ## What is MCP?
@@ -262,6 +263,16 @@ Example of Configuring Claude Desktop to recognize the Telegram MCP server.
       }
     }
     ```
+
+### JSON Schema Version
+
+Some MCP clients (e.g. VS Code) do not support JSON Schema Draft 2020-12 and will reject tools that use it. You can override the JSON Schema version by setting the `--schema-version` flag or the `TG_SCHEMA_VERSION` environment variable.
+
+Common values:
+| Version | URL |
+|---------|-----|
+| Draft-07 (recommended for VS Code) | `https://json-schema.org/draft-07/schema#` |
+| Draft 2020-12 (default) | `https://json-schema.org/draft/2020-12/schema` |
 
 ## Star History
 

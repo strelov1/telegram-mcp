@@ -59,6 +59,11 @@ func main() {
 				Value:   sesionPath,
 				Sources: cli.EnvVars("TG_SESSION_PATH"),
 			},
+			&cli.StringFlag{
+				Name:    "schema-version",
+				Usage:   "JSON Schema version URL (e.g. https://json-schema.org/draft-07/schema#)",
+				Sources: cli.EnvVars("TG_SCHEMA_VERSION"),
+			},
 			&cli.BoolFlag{
 				Name:        "dry",
 				Usage:       "Test configuration",

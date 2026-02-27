@@ -4,6 +4,7 @@ go 1.24
 
 require (
 	github.com/gotd/td v0.121.0
+	github.com/invopop/jsonschema v0.12.0
 	github.com/metoro-io/mcp-golang v0.8.0
 	github.com/pkg/errors v0.9.1
 	github.com/rs/zerolog v1.34.0
@@ -28,7 +29,6 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gotd/ige v0.2.2 // indirect
 	github.com/gotd/neo v0.1.5 // indirect
-	github.com/invopop/jsonschema v0.12.0 // indirect
 	github.com/klauspost/compress v1.18.0 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect

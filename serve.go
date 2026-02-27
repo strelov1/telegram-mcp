@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/chaindead/telegram-mcp/internal/tg"
+	"github.com/invopop/jsonschema"
 
 	mcp "github.com/metoro-io/mcp-golang"
 	"github.com/metoro-io/mcp-golang/transport/stdio"
@@ -19,6 +20,10 @@ func serve(ctx context.Context, cmd *cli.Command) error {
 	appHash := cmd.String("api-hash")
 	sessionPath := cmd.String("session")
 	dryRun := cmd.Bool("dry")
+
+	if schemaURL := cmd.String("schema-version"); schemaURL != "" {
+		jsonschema.Version = schemaURL
+	}
 
 	_, err := os.Stat(sessionPath)
 	if err != nil {
