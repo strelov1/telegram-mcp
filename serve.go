@@ -70,11 +70,11 @@ func serve(ctx context.Context, cmd *cli.Command) error {
 
 		log.Info().RawJSON("answer", []byte(answer.Content[0].TextContent.Text)).Msg("Check GetHistory: OK")
 
-		answer, err = client.SendDraft(tg.DraftArguments{Name: os.Getenv("TG_TEST_USERNAME"), Text: "test draft"})
+		answer, err = client.SendMessage(tg.SendArguments{Name: os.Getenv("TG_TEST_USERNAME"), Text: "test message"})
 		if err != nil {
-			log.Err(err).Msg("Check SendDraft: FAIL")
+			log.Err(err).Msg("Check SendMessage: FAIL")
 		} else {
-			log.Info().RawJSON("answer", []byte(answer.Content[0].TextContent.Text)).Msg("Check SendDraft: OK")
+			log.Info().RawJSON("answer", []byte(answer.Content[0].TextContent.Text)).Msg("Check SendMessage: OK")
 		}
 
 		answer, err = client.ReadHistory(tg.ReadArguments{Name: os.Getenv("TG_TEST_USERNAME")})
@@ -102,14 +102,29 @@ func serve(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("register dialogs tool: %w", err)
 	}
 
-	err = server.RegisterTool("tg_send", "Send draft message to dialog", client.SendDraft)
+	err = server.RegisterTool("tg_send", "Send message to dialog", client.SendMessage)
 	if err != nil {
-		return fmt.Errorf("register dialogs tool: %w", err)
+		return fmt.Errorf("register send tool: %w", err)
 	}
 
 	err = server.RegisterTool("tg_read", "Mark dialog messages as read", client.ReadHistory)
 	if err != nil {
 		return fmt.Errorf("register read tool: %w", err)
+	}
+
+	err = server.RegisterTool("tg_search_groups", "Search for public Telegram groups and channels by keyword", client.SearchGroups)
+	if err != nil {
+		return fmt.Errorf("register search groups tool: %w", err)
+	}
+
+	err = server.RegisterTool("tg_join_group", "Join a Telegram group or channel by username or invite link", client.JoinGroup)
+	if err != nil {
+		return fmt.Errorf("register join group tool: %w", err)
+	}
+
+	err = server.RegisterTool("tg_leave_group", "Leave a Telegram group or channel", client.LeaveGroup)
+	if err != nil {
+		return fmt.Errorf("register leave group tool: %w", err)
 	}
 
 	if err := server.Serve(); err != nil {

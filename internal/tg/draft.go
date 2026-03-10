@@ -5,22 +5,21 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/gotd/td/tg"
+	"github.com/gotd/td/telegram/message"
 	mcp "github.com/metoro-io/mcp-golang"
 	"github.com/pkg/errors"
 )
 
-type DraftArguments struct {
+type SendArguments struct {
 	Name string `json:"name" jsonschema:"required,description=Name of the dialog"`
 	Text string `json:"text" jsonschema:"required,description=Plain text of the message"`
 }
 
-type DraftResponse struct {
+type SendResponse struct {
 	Success bool `json:"success"`
 }
 
-func (c *Client) SendDraft(args DraftArguments) (*mcp.ToolResponse, error) {
-	var ok bool
+func (c *Client) SendMessage(args SendArguments) (*mcp.ToolResponse, error) {
 	client := c.T()
 	if err := client.Run(context.Background(), func(ctx context.Context) (err error) {
 		api := client.API()
@@ -30,20 +29,18 @@ func (c *Client) SendDraft(args DraftArguments) (*mcp.ToolResponse, error) {
 			return fmt.Errorf("get inputPeer from name: %w", err)
 		}
 
-		ok, err = api.MessagesSaveDraft(ctx, &tg.MessagesSaveDraftRequest{
-			Peer:    inputPeer,
-			Message: args.Text,
-		})
+		sender := message.NewSender(api)
+		_, err = sender.To(inputPeer).Text(ctx, args.Text)
 		if err != nil {
-			return fmt.Errorf("failed to get history: %w", err)
+			return fmt.Errorf("failed to send message: %w", err)
 		}
 
 		return nil
 	}); err != nil {
-		return nil, errors.Wrap(err, "failed to get history")
+		return nil, errors.Wrap(err, "failed to send message")
 	}
 
-	jsonData, err := json.Marshal(DraftResponse{Success: ok})
+	jsonData, err := json.Marshal(SendResponse{Success: true})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to marshal response")
 	}
