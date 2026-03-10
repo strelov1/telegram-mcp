@@ -252,7 +252,7 @@ func (c *Client) LeaveGroup(args LeaveGroupArguments) (*mcp.ToolResponse, error)
 		case *tg.InputPeerChat:
 			_, err = api.MessagesDeleteChatUser(ctx, &tg.MessagesDeleteChatUserRequest{
 				ChatID: peer.ChatID,
-				UserId: &tg.InputUserSelf{},
+				UserID: &tg.InputUserSelf{},
 			})
 			if err != nil {
 				return fmt.Errorf("leave chat: %w", err)
