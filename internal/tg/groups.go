@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/gotd/td/tg"
 	mcp "github.com/metoro-io/mcp-golang"
@@ -208,6 +209,136 @@ func (c *Client) JoinGroup(args JoinGroupArguments) (*mcp.ToolResponse, error) {
 		return nil
 	}); err != nil {
 		return nil, errors.Wrap(err, "join group failed")
+	}
+
+	jsonData, err := json.Marshal(response)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to marshal response")
+	}
+	return mcp.NewToolResponse(mcp.NewTextContent(string(jsonData))), nil
+}
+
+// --- tg_search_messages ---
+
+type SearchMessagesArguments struct {
+	Name  string `json:"name" jsonschema:"required,description=Dialog name (username, channel name, or chat ID like chn[id:hash] or cht[id])"`
+	Query string `json:"query" jsonschema:"required,description=Text to search for in messages"`
+	Limit int    `json:"limit,omitempty" jsonschema:"description=Maximum number of results (default 20, max 100)"`
+}
+
+type SearchMessagesResult struct {
+	ID   int    `json:"id"`
+	Who  string `json:"who,omitempty"`
+	When string `json:"when,omitempty"`
+	Text string `json:"text"`
+}
+
+type SearchMessagesResponse struct {
+	Results []SearchMessagesResult `json:"results"`
+	Total   int                    `json:"total"`
+	Query   string                 `json:"query"`
+	Dialog  string                 `json:"dialog"`
+}
+
+func (c *Client) SearchMessages(args SearchMessagesArguments) (*mcp.ToolResponse, error) {
+	limit := args.Limit
+	if limit <= 0 {
+		limit = 20
+	}
+	if limit > 100 {
+		limit = 100
+	}
+
+	response := SearchMessagesResponse{
+		Query:  args.Query,
+		Dialog: args.Name,
+	}
+
+	client := c.T()
+	if err := client.Run(context.Background(), func(ctx context.Context) error {
+		api := client.API()
+
+		inputPeer, err := getInputPeerFromName(ctx, api, args.Name)
+		if err != nil {
+			return fmt.Errorf("get inputPeer: %w", err)
+		}
+
+		result, err := api.MessagesSearch(ctx, &tg.MessagesSearchRequest{
+			Peer:      inputPeer,
+			Q:         args.Query,
+			Filter:    &tg.InputMessagesFilterEmpty{},
+			MinDate:   0,
+			MaxDate:   0,
+			OffsetID:  0,
+			AddOffset: 0,
+			Limit:     limit,
+			MaxID:     0,
+			MinID:     0,
+			Hash:      0,
+		})
+		if err != nil {
+			return fmt.Errorf("messages search: %w", err)
+		}
+
+		// Build userID -> name map from the response's Users field
+		userNames := map[int64]string{}
+		var msgs []tg.MessageClass
+
+		switch r := result.(type) {
+		case *tg.MessagesMessages:
+			msgs = r.Messages
+			response.Total = len(msgs)
+			for _, u := range r.Users {
+				if user, ok := u.(*tg.User); ok {
+					userNames[user.ID] = user.FirstName
+				}
+			}
+		case *tg.MessagesMessagesSlice:
+			msgs = r.Messages
+			response.Total = r.Count
+			for _, u := range r.Users {
+				if user, ok := u.(*tg.User); ok {
+					userNames[user.ID] = user.FirstName
+				}
+			}
+		case *tg.MessagesChannelMessages:
+			msgs = r.Messages
+			response.Total = r.Count
+			for _, u := range r.Users {
+				if user, ok := u.(*tg.User); ok {
+					userNames[user.ID] = user.FirstName
+				}
+			}
+		}
+
+		var results []SearchMessagesResult
+		for _, m := range msgs {
+			msg, ok := m.(*tg.Message)
+			if !ok || msg.Message == "" {
+				continue
+			}
+			item := SearchMessagesResult{
+				ID:   msg.ID,
+				Text: msg.Message,
+				When: time.Unix(int64(msg.Date), 0).UTC().Format("2006-01-02 15:04:05"),
+			}
+			if fromPeer, ok := msg.GetFromID(); ok {
+				if peerUser, ok := fromPeer.(*tg.PeerUser); ok {
+					if name, exists := userNames[peerUser.UserID]; exists {
+						item.Who = name
+					}
+				}
+			}
+			results = append(results, item)
+		}
+
+		if results == nil {
+			results = []SearchMessagesResult{}
+		}
+		response.Results = results
+		return nil
+	}); err != nil {
+		return nil, errors.Wrap(err, "search messages failed")
 	}
 
 	jsonData, err := json.Marshal(response)

@@ -127,6 +127,11 @@ func serve(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("register leave group tool: %w", err)
 	}
 
+	err = server.RegisterTool("tg_search_messages", "Search for messages containing a keyword in a specific Telegram dialog, group, or channel", client.SearchMessages)
+	if err != nil {
+		return fmt.Errorf("register search messages tool: %w", err)
+	}
+
 	if err := server.Serve(); err != nil {
 		return fmt.Errorf("serve: %w", err)
 	}
